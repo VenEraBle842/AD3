@@ -4,8 +4,6 @@ project(TreeSetLab LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include)
-
 add_executable(lab1_ui main.cpp)
 
 add_executable(benchmark_runner benchmark/benchmark_runner.cpp)

@@ -71,8 +71,19 @@ public:
         return *this;
     }
 
-    DynamicArray(DynamicArray&& other) noexcept = default;
-    DynamicArray& operator=(DynamicArray&& other) noexcept = default;
+    DynamicArray(DynamicArray&& other) noexcept
+    : data_(std::move(other.data_)),
+      size_(std::exchange(other.size_, 0)),
+      capacity_(std::exchange(other.capacity_, 0)) {}
+
+    DynamicArray& operator=(DynamicArray&& other) noexcept {
+        if (this != &other) {
+            data_ = std::move(other.data_);
+            size_ = std::exchange(other.size_, 0);
+            capacity_ = std::exchange(other.capacity_, 0);
+        }
+        return *this;
+    }
 
     void push_back(T value) {
         if (size_ == capacity_) {

@@ -31,7 +31,7 @@ public:
     ~Queue() = default;
 
     Queue(const Queue& other)
-        : capacity_(other.capacity_), head_(0), tail_(other.size_), size_(other.size_) {
+        : capacity_(other.capacity_), head_(0), tail_(other.capacity_ == 0 ? 0 : other.size_ % other.capacity_), size_(other.size_) {
         if (capacity_ > 0) {
             data_ = std::make_unique<T[]>(capacity_);
             for (std::size_t i = 0; i < size_; ++i) {
@@ -45,7 +45,7 @@ public:
             capacity_ = other.capacity_;
             size_ = other.size_;
             head_ = 0;
-            tail_ = size_;
+            tail_ = capacity_ == 0 ? 0 : size_ % capacity_;
             if (capacity_ > 0) {
                 data_ = std::make_unique<T[]>(capacity_);
                 for (std::size_t i = 0; i < size_; ++i) {
@@ -58,8 +58,23 @@ public:
         return *this;
     }
 
-    Queue(Queue&& other) noexcept = default;
-    Queue& operator=(Queue&& other) noexcept = default;
+    Queue(Queue&& other) noexcept
+    : data_(std::move(other.data_)),
+      capacity_(std::exchange(other.capacity_, 0)),
+      head_(std::exchange(other.head_, 0)),
+      tail_(std::exchange(other.tail_, 0)),
+      size_(std::exchange(other.size_, 0)) {}
+
+    Queue& operator=(Queue&& other) noexcept {
+        if (this != &other) {
+            data_ = std::move(other.data_);
+            capacity_ = std::exchange(other.capacity_, 0);
+            head_ = std::exchange(other.head_, 0);
+            tail_ = std::exchange(other.tail_, 0);
+            size_ = std::exchange(other.size_, 0);
+        }
+        return *this;
+    }
 
     void push(T value) {
         if (size_ == capacity_) {

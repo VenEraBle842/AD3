@@ -2,7 +2,11 @@
 #include "set/set.hpp"
 #include "models/student.hpp"
 
+#include <cstddef>
+#include <ios>
 #include <iostream>
+#include <limits>
+#include <stdexcept>
 #include <string>
 #include <random>
 
@@ -11,23 +15,20 @@ template <typename T>
 T readInput(const std::string& prompt) {
     std::cout << prompt;
     T val;
-    std::cin >> val;
+    if (!(std::cin >> val)) {
+        throw std::runtime_error("Invalid input");
+    }
     return val;
 }
 
 template <>
 Student readInput<Student>(const std::string& prompt) {
     std::cout << prompt << "\n";
-    uint64_t id;
-    std::string first, last;
-    int year;
-    double gpa;
-
-    std::cout << "  ID: "; std::cin >> id;
-    std::cout << "  First name: "; std::cin >> first;
-    std::cout << "  Last name: "; std::cin >> last;
-    std::cout << "  Birth year: "; std::cin >> year;
-    std::cout << "  GPA: "; std::cin >> gpa;
+    const auto id = readInput<uint64_t>("  ID: ");
+    const auto first = readInput<std::string>("  First name: ");
+    const auto last = readInput<std::string>("  Last name: ");
+    const auto year = readInput<int>("  Birth year: ");
+    const auto gpa = readInput<double>("  GPA: ");
 
     return Student(id, first, last, year, gpa);
 }
@@ -38,29 +39,53 @@ void generateRandomData(BinarySearchTree<T>& tree, std::size_t count);
 
 template <>
 void generateRandomData<int>(BinarySearchTree<int>& tree, std::size_t count) {
-    std::mt19937 rng(42);
+    if (tree.size() >= count) return;
+
+    if (count > static_cast<std::size_t>(std::numeric_limits<int>::max() / 5)) {
+        throw std::invalid_argument("Requested count is too large");
+    }
+
+    std::mt19937 rng(100);
     std::uniform_int_distribution<int> dist(1, count * 5);
-    while (tree.size() < count) tree.insert(dist(rng));
+
+    while (tree.size() < count) {
+        tree.insert(dist(rng));
+    }
 }
 
 template <>
 void generateRandomData<double>(BinarySearchTree<double>& tree, std::size_t count) {
-    std::mt19937 rng(42);
+    if (tree.size() >= count) return;
+
+    constexpr std::size_t maxGeneratedValues = 991;
+    if (count > maxGeneratedValues) {
+        throw std::invalid_argument(
+            "Automatic generation supports at most 991 double values"
+        );
+    }
+
+    std::mt19937 rng(100);
     std::uniform_real_distribution<double> dist(1.0, 100.0);
-    while (tree.size() < count) tree.insert(std::round(dist(rng) * 10.0) / 10.0);
+
+    while (tree.size() < count) {
+        tree.insert(std::round(dist(rng) * 10.0) / 10.0);
+    }
 }
 
 template <>
 void generateRandomData<std::string>(BinarySearchTree<std::string>& tree, std::size_t count) {
     static const char* words[] = {"Apple", "Banana", "Orange", "Cherry", "Mango", "Peach", "Plum", "Kiwi", "Lemon", "Melon"};
-    for (std::size_t i = 0; i < count && i < 10; ++i) tree.insert(words[i]);
+
+    for (std::size_t i = 0; i < count && i < 10; ++i) {
+        tree.insert(words[i]);
+    }
 }
 
 template <>
 void generateRandomData<Student>(BinarySearchTree<Student>& tree, std::size_t count) {
     static const char* names[] = {"Ivan", "Petr", "Anna", "Elena", "Dmitry", "Sergey", "Olga"};
     static const char* lasts[] = {"Ivanov", "Petrov", "Sidorov", "Smirnov", "Kozlov", "Morozov", "Popov"};
-    std::mt19937 rng(42);
+
     for (std::size_t i = 1; i <= count && i <= 7; ++i) {
         tree.insert(Student(100 + i, names[i - 1], lasts[i - 1], 2002 + (i % 3), 3.5 + (i % 15) * 0.1));
     }
@@ -69,7 +94,6 @@ void generateRandomData<Student>(BinarySearchTree<Student>& tree, std::size_t co
 template <typename T>
 void runTreeMenu(const std::string& typeName) {
     BinarySearchTree<T> tree;
-    Set<T> currentSet;
 
     while (true) {
         std::cout << "\n======================================================\n";
@@ -89,9 +113,13 @@ void runTreeMenu(const std::string& typeName) {
 
         int choice;
         if (!(std::cin >> choice)) {
+            if (std::cin.eof()) break;
+
             std::cin.clear();
-            std::string dummy;
-            std::cin >> dummy;
+            std::cin.ignore(
+                std::numeric_limits<std::streamsize>::max(), '\n'
+            );
+            std::cout << "Invalid menu option\n";
             continue;
         }
 
@@ -142,7 +170,7 @@ void runTreeMenu(const std::string& typeName) {
                     std::cout << " 7: BFS (Breadth-First / Level-order)\n";
                     std::cout << "Order [1-7]: ";
 
-                    int o; std::cin >> o;
+                    int o = readInput<int>("");
                     TraversalOrder order = TraversalOrder::LKP;
                     if (o == 1) order = TraversalOrder::KLP;
                     else if (o == 2) order = TraversalOrder::KPL;
@@ -210,6 +238,15 @@ void runTreeMenu(const std::string& typeName) {
                     std::cout << "Unknown menu option\n";
             }
         } catch (const std::exception& ex) {
+            if (std::cin.eof()) break;
+
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(
+                    std::numeric_limits<std::streamsize>::max(), '\n'
+                );
+            }
+
             std::cout << "-> ERROR: " << ex.what() << "\n";
         }
     }

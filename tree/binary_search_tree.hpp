@@ -50,26 +50,6 @@ private:
         return newRoot;
     }
 
-    static void parseOrderString(const std::string& orderStr, Step steps[3]) {
-        int count = 0;
-        for (char ch : orderStr) {
-            if (count >= 3) break;
-            if (ch == 'K' || ch == 'k' || ch == 'R' || ch == 'r' || (unsigned char)ch == 0x9A || ch == -46 || ch == -14) { // 'К' / 'к'
-                steps[count++] = Step::Root;
-            } else if (ch == 'L' || ch == 'l' || ch == 'l' || (unsigned char)ch == 0x9B || ch == -45 || ch == -13) {     // 'Л' / 'л'
-                steps[count++] = Step::Left;
-            } else if (ch == 'P' || ch == 'p' || (unsigned char)ch == 0x9F || ch == -41 || ch == -9) {                    // 'П' / 'п'
-                steps[count++] = Step::Right;
-            }
-        }
-
-        if (count != 3) {
-            steps[0] = Step::Left;
-            steps[1] = Step::Root;
-            steps[2] = Step::Right;
-        }
-    }
-
     static void getStepsByOrder(TraversalOrder order, Step steps[3]) {
         switch (order) {
             case TraversalOrder::KLP: steps[0] = Step::Root;  steps[1] = Step::Left;  steps[2] = Step::Right; break;
@@ -101,7 +81,7 @@ private:
             if (!current.node) continue;
 
             if (current.isAction) {
-                action(current.node->value);
+                action(std::as_const(current.node->value));
             } else {
                 // Помещаем шаги на стек в ОБРАТНОМ порядке, чтобы первый шаг выполнился первым
                 for (int i = 2; i >= 0; --i) {
@@ -126,7 +106,7 @@ private:
         while (!q.empty()) {
             auto curr = q.front();
             q.pop();
-            action(curr->value);
+            action(std::as_const(curr->value));
 
             if (curr->left) q.push(curr->left);
             if (curr->right) q.push(curr->right);
@@ -171,7 +151,10 @@ public:
         return *this;
     }
 
-    BinarySearchTree(BinarySearchTree&& other) noexcept = default;
+    BinarySearchTree(BinarySearchTree&& other) noexcept
+    : root_(std::move(other.root_)),
+      size_(std::exchange(other.size_, 0)),
+      comp_(std::move(other.comp_)) {}
 
     BinarySearchTree& operator=(BinarySearchTree&& other) noexcept {
         if (this != &other) {
