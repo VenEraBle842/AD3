@@ -50,6 +50,22 @@ private:
         return newRoot;
     }
 
+    std::shared_ptr<TreeNode<T>> findNode(const T& key) const {
+        auto curr = root_;
+
+        while (curr) {
+            if (comp_(key, curr->value)) {
+                curr = curr->left;
+            } else if (comp_(curr->value, key)) {
+                curr = curr->right;
+            } else {
+                return curr;
+            }
+        }
+
+        return nullptr;
+    }
+
     static void getStepsByOrder(TraversalOrder order, Step steps[3]) {
         switch (order) {
             case TraversalOrder::KLP: steps[0] = Step::Root;  steps[1] = Step::Left;  steps[2] = Step::Right; break;
@@ -204,34 +220,14 @@ public:
         }
     }
 
-    // Итеративный поиск наличия
     bool contains(const T& key) const {
-        auto curr = root_;
-        while (curr) {
-            if (comp_(key, curr->value)) {
-                curr = curr->left;
-            } else if (comp_(curr->value, key)) {
-                curr = curr->right;
-            } else {
-                return true;
-            }
-        }
-        return false;
+        return findNode(key) != nullptr;
     }
 
-    // Итеративный поиск значения
     const T& search(const T& key) const {
-        auto curr = root_;
-        while (curr) {
-            if (comp_(key, curr->value)) {
-                curr = curr->left;
-            } else if (comp_(curr->value, key)) {
-                curr = curr->right;
-            } else {
-                return curr->value;
-            }
-        }
-        throw NodeNotFoundException("Key not found in tree");
+        auto node = findNode(key);
+        if (!node) throw NodeNotFoundException("Key not found in tree");
+        return node->value;
     }
 
     bool remove(const T& key) {
@@ -285,20 +281,8 @@ public:
 
     // Извлечение поддерева по значению корня
     BinarySearchTree<T, Compare> getSubtree(const T& rootValue) const {
-        auto curr = root_;
-        while (curr) {
-            if (comp_(rootValue, curr->value)) {
-                curr = curr->left;
-            } else if (comp_(curr->value, rootValue)) {
-                curr = curr->right;
-            } else {
-                break;
-            }
-        }
-
-        if (!curr) {
-            throw NodeNotFoundException("Subtree root value was not found in tree");
-        }
+        auto curr = findNode(rootValue);
+        if (!curr) throw NodeNotFoundException("Subtree root value was not found in tree");
 
         BinarySearchTree<T, Compare> result;
         result.root_ = cloneTree(curr);

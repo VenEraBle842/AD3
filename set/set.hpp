@@ -59,24 +59,16 @@ public:
 
     // Пересечение (A * B)
     Set<T, Compare> intersectWith(const Set& other) const {
-        Set<T, Compare> result;
-        tree_.forEach(TraversalOrder::LKP, [&result, &other](const T& val) {
-            if (other.contains(val)) {
-                result.insert(val);
-            }
+        return where([&other](const T& value) {
+            return other.contains(value);
         });
-        return result;
     }
 
     // Разность (A - B)
     Set<T, Compare> differenceWith(const Set& other) const {
-        Set<T, Compare> result;
-        tree_.forEach(TraversalOrder::LKP, [&result, &other](const T& val) {
-            if (!other.contains(val)) {
-                result.insert(val);
-            }
+        return where([&other](const T& value) {
+            return !other.contains(value);
         });
-        return result;
     }
 
     // A <= B (является ли текущее множество подмножеством other)
@@ -106,7 +98,7 @@ public:
     template <typename Predicate>
     Set<T, Compare> where(Predicate p) const {
         Set<T, Compare> resultSet;
-        tree_.forEach(TraversalOrder::LKP, [&resultSet, &p](const T& val) {
+        tree_.forEach(TraversalOrder::KLP, [&resultSet, &p](const T& val) {
             if (p(val)) {
                 resultSet.insert(val);
             }

@@ -92,6 +92,13 @@ void generateRandomData<Student>(BinarySearchTree<Student>& tree, std::size_t co
     }
 }
 
+void discardInvalidInput() {
+    std::cin.clear();
+    std::cin.ignore(
+        std::numeric_limits<std::streamsize>::max(), '\n'
+    );
+}
+
 template <typename T>
 void runTreeMenu(const std::string& typeName) {
     BinarySearchTree<T> tree;
@@ -115,11 +122,7 @@ void runTreeMenu(const std::string& typeName) {
         int choice;
         if (!(std::cin >> choice)) {
             if (std::cin.eof()) break;
-
-            std::cin.clear();
-            std::cin.ignore(
-                std::numeric_limits<std::streamsize>::max(), '\n'
-            );
+            discardInvalidInput();
             std::cout << "Invalid menu option\n";
             continue;
         }
@@ -242,14 +245,7 @@ void runTreeMenu(const std::string& typeName) {
             }
         } catch (const std::exception& ex) {
             if (std::cin.eof()) break;
-
-            if (std::cin.fail()) {
-                std::cin.clear();
-                std::cin.ignore(
-                    std::numeric_limits<std::streamsize>::max(), '\n'
-                );
-            }
-
+            if (std::cin.fail()) discardInvalidInput();
             std::cout << "-> ERROR: " << ex.what() << "\n";
         }
     }
