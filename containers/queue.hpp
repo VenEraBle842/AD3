@@ -42,18 +42,8 @@ public:
 
     Queue& operator=(const Queue& other) {
         if (this != &other) {
-            capacity_ = other.capacity_;
-            size_ = other.size_;
-            head_ = 0;
-            tail_ = capacity_ == 0 ? 0 : size_ % capacity_;
-            if (capacity_ > 0) {
-                data_ = std::make_unique<T[]>(capacity_);
-                for (std::size_t i = 0; i < size_; ++i) {
-                    data_[i] = other.data_[(other.head_ + i) % other.capacity_];
-                }
-            } else {
-                data_.reset();
-            }
+            Queue copy(other);
+            *this = std::move(copy);
         }
         return *this;
     }

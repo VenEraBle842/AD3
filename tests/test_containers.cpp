@@ -114,7 +114,7 @@ TEST(QueueTest, RingBufferBehaviorAndWrapAround) {
     EXPECT_THROW(q.front(), std::underflow_error);
 }
 
-TEST(QueueTest, CopyAndMove) {
+TEST(QueueTest, CopyIndependence) {
     Queue<int> q1;
     q1.push(10);
     q1.push(20);

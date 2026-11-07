@@ -57,16 +57,8 @@ public:
 
     DynamicArray& operator=(const DynamicArray& other) {
         if (this != &other) {
-            size_ = other.size_;
-            capacity_ = other.capacity_;
-            if (capacity_ > 0) {
-                data_ = std::make_unique<T[]>(capacity_);
-                for (std::size_t i = 0; i < size_; ++i) {
-                    data_[i] = other.data_[i];
-                }
-            } else {
-                data_.reset();
-            }
+            DynamicArray copy(other);
+            *this = std::move(copy);
         }
         return *this;
     }

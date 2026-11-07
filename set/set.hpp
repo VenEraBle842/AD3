@@ -44,7 +44,7 @@ public:
         return tree_.remove(key);
     }
 
-    bool contains(const T& key) const noexcept {
+    bool contains(const T& key) const {
         return tree_.contains(key);
     }
 

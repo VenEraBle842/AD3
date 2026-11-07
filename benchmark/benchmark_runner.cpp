@@ -12,6 +12,7 @@ struct BenchmarkResult {
     double insertTimeMs;
     double searchTimeMs;
     double removeTimeMs;
+    std::size_t foundCount;
 };
 
 BenchmarkResult runBenchmarkForSize(std::size_t n, std::mt19937_64& rng) {
@@ -33,10 +34,11 @@ BenchmarkResult runBenchmarkForSize(std::size_t n, std::mt19937_64& rng) {
 
     // 2. Замер времени поиска (Search) — 10000 случайных запросов
     const std::size_t searchQueries = 10000;
+    std::size_t foundCount = 0;
     auto startSearch = std::chrono::high_resolution_clock::now();
     for (std::size_t i = 0; i < searchQueries; ++i) {
         uint64_t query = (i % 2 == 0) ? insertedKeys[i % insertedKeys.size()] : dist(rng);
-        tree.contains(query);
+        if(tree.contains(query)) ++foundCount;
     }
     auto endSearch = std::chrono::high_resolution_clock::now();
     double searchMs = std::chrono::duration<double, std::milli>(endSearch - startSearch).count();
@@ -50,7 +52,7 @@ BenchmarkResult runBenchmarkForSize(std::size_t n, std::mt19937_64& rng) {
     auto endRemove = std::chrono::high_resolution_clock::now();
     double removeMs = std::chrono::duration<double, std::milli>(endRemove - startRemove).count();
 
-    return {n, insertMs, searchMs, removeMs};
+    return {n, insertMs, searchMs, removeMs, foundCount};
 }
 
 int main() {
@@ -85,6 +87,8 @@ int main() {
                   << std::setw(18) << std::fixed << std::setprecision(2) << res.insertTimeMs
                   << std::setw(18) << std::fixed << std::setprecision(2) << res.searchTimeMs
                   << std::setw(18) << std::fixed << std::setprecision(2) << res.removeTimeMs << "\n";
+        std::cout << "  Found: " << res.foundCount
+                  << " / 10000 queries\n";
 
         csvFile << res.size << ","
                 << res.insertTimeMs << ","

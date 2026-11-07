@@ -205,7 +205,7 @@ public:
     }
 
     // Итеративный поиск наличия
-    bool contains(const T& key) const noexcept {
+    bool contains(const T& key) const {
         auto curr = root_;
         while (curr) {
             if (comp_(key, curr->value)) {

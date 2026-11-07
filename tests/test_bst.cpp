@@ -27,7 +27,7 @@ TEST(BSTTest, InsertSearchRemoveContains) {
     EXPECT_FALSE(bst.contains(20));
     EXPECT_EQ(bst.size(), 4);
 
-    // 2. Удаление узла с двумя потомками (30)
+    // 2. Удаление узла с одним потомком (30)
     EXPECT_TRUE(bst.remove(30));
     EXPECT_FALSE(bst.contains(30));
     EXPECT_TRUE(bst.contains(40));
@@ -105,7 +105,7 @@ TEST(BSTTest, MapReduceWhere) {
     EXPECT_TRUE(mapped.contains(1.5));
     EXPECT_TRUE(mapped.contains(7.5));
 
-    // where: фильтрация нечетных
+    // where: выбор четных
     auto evens = tree.where([](int x) { return x % 2 == 0; });
     EXPECT_EQ(evens.size(), 2);
     EXPECT_TRUE(evens.contains(2));

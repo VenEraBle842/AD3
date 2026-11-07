@@ -2,6 +2,7 @@
 #include "set/set.hpp"
 #include "models/student.hpp"
 
+#include <cmath>
 #include <cstddef>
 #include <ios>
 #include <iostream>
@@ -204,8 +205,10 @@ void runTreeMenu(const std::string& typeName) {
                     break;
                 }
                 case 8: {
-                    std::size_t count = readInput<std::size_t>("How many random elements to generate? ");
-                    generateRandomData(tree, count);
+                    int count = readInput<int>("Target number of elements: ");
+                    if (count < 0) throw std::invalid_argument("Count must be non-negative");
+
+                    generateRandomData(tree, static_cast<std::size_t>(count));
                     std::cout << "-> Generated. Current size: " << tree.size() << "\n";
                     break;
                 }
