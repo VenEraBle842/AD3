@@ -1,0 +1,8 @@
+/build*/
+/.venv/
+/.cache/
+__pycache__/
+*.pyc
+
+benchmark_plot.png
+benchmark_results.csv
