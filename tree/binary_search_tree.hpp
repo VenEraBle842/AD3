@@ -29,24 +29,28 @@ private:
     static std::shared_ptr<TreeNode<T>> cloneTree(const std::shared_ptr<TreeNode<T>>& srcRoot) {
         if (!srcRoot) return nullptr;
 
-        auto newRoot = std::make_shared<TreeNode<T>>(srcRoot->value);
-        Queue<std::pair<std::shared_ptr<TreeNode<T>>, std::shared_ptr<TreeNode<T>>>> q;
+        struct NodePair {
+            std::shared_ptr<TreeNode<T>> source;
+            std::shared_ptr<TreeNode<T>> copy;
+        };
+
+        auto newRoot
+            = std::make_shared<TreeNode<T>>(srcRoot->value);
+
+        Queue<NodePair> q;
         q.push({srcRoot, newRoot});
 
         while (!q.empty()) {
-            auto currentPair = q.front();
+            auto [src, cpy] = q.front();
             q.pop();
 
-            auto src = currentPair.first;
-            auto dst = currentPair.second;
-
             if (src->left) {
-                dst->left = std::make_shared<TreeNode<T>>(src->left->value);
-                q.push({src->left, dst->left});
+                cpy->left = std::make_shared<TreeNode<T>>(src->left->value);
+                q.push({src->left, cpy->left});
             }
             if (src->right) {
-                dst->right = std::make_shared<TreeNode<T>>(src->right->value);
-                q.push({src->right, dst->right});
+                cpy->right = std::make_shared<TreeNode<T>>(src->right->value);
+                q.push({src->right, cpy->right});
             }
         }
         return newRoot;
