@@ -4,6 +4,12 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
+#include <limits>
+#include <locale>
+#include <cmath>
+#include <cctype>
+#include <utility>
 
 struct Student {
     uint64_t id{0};
@@ -32,23 +38,57 @@ struct Student {
     bool operator!=(const Student& other) const noexcept { return !(*this == other); }
 
     friend std::ostream& operator<<(std::ostream& os, const Student& s) {
-        os << s.id << ":" << s.firstName << ":" << s.lastName << ":" << s.birthYear << ":" << s.gpa;
-        return os;
+        if (!std::isfinite(s.gpa)) {
+            os.setstate(std::ios::failbit);
+            return os;
+        }
+
+        std::ostringstream record;
+        record.imbue(std::locale::classic());
+
+        record << s.id << ':'
+            << std::quoted(s.firstName) << ':'
+            << std::quoted(s.lastName) << ':'
+            << s.birthYear << ':'
+            << std::setprecision(std::numeric_limits<double>::max_digits10)
+            << s.gpa;
+        return os << record.str();
     }
 
     friend std::istream& operator>>(std::istream& is, Student& s) {
-        std::string token;
-        if (!(is >> token)) return is;
-        if (token == "#") return is;
+        Student parsed;
 
-        std::stringstream ss(token);
-        std::string part;
-        if (std::getline(ss, part, ':')) s.id = std::stoull(part);
-        if (std::getline(ss, part, ':')) s.firstName = part;
-        if (std::getline(ss, part, ':')) s.lastName = part;
-        if (std::getline(ss, part, ':')) s.birthYear = std::stoi(part);
-        if (std::getline(ss, part, ':')) s.gpa = std::stod(part);
+        const auto readColon = [&is]() {
+            char ch;
+            return static_cast<bool>(is.get(ch)) && ch == ':';
+        };
 
+        is >> std::ws;
+        if (is.peek() == '-' ||
+            !(is >> parsed.id) ||
+            !readColon() ||
+            is.peek() != '"' ||
+            !(is >> std::quoted(parsed.firstName)) ||
+            !readColon() ||
+            is.peek() != '"' ||
+            !(is >> std::quoted(parsed.lastName)) ||
+            !readColon() ||
+            !(is >> parsed.birthYear) ||
+            !readColon() ||
+            !(is >> parsed.gpa) ||
+            !std::isfinite(parsed.gpa)) {
+            is.setstate(std::ios::failbit);
+            return is;
+        }
+
+        const auto ch = is.eof() ? std::char_traits<char>::eof() : is.peek();
+
+        if (ch != std::char_traits<char>::eof() && !std::isspace(static_cast<unsigned char>(ch))) {
+            is.setstate(std::ios::failbit);
+            return is;
+        }
+
+        s = std::move(parsed);
         return is;
     }
 };

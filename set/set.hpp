@@ -2,12 +2,14 @@
 
 #include "../tree/binary_search_tree.hpp"
 #include "../tree/bst_exceptions.hpp"
+#include "../tree/serialization_utils.hpp"
 
 #include <functional>
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <utility>
+#include <locale>
 
 template <typename T, typename Compare = std::less<T>>
 class Set {
@@ -72,7 +74,7 @@ public:
     }
 
     // A <= B (является ли текущее множество подмножеством other)
-    [[nodiscard]] bool isSubsetOf(const Set& other) const {
+    bool isSubsetOf(const Set& other) const {
         if (size() > other.size()) return false;
 
         bool allContained = true;
@@ -114,35 +116,43 @@ public:
     // Сериализация множества в строку формата "{ val1 val2 val3 }"
     std::string serialize() const {
         std::ostringstream oss;
+        oss.imbue(std::locale::classic());
+
         oss << "{ ";
-        tree_.forEach(TraversalOrder::LKP, [&oss](const T& val) {
-            oss << val << " ";
+        tree_.forEach(TraversalOrder::KLP, [&oss](const T& value) {
+                writeValue(oss, value);
+                oss << ' ';
         });
-        oss << "}";
+        oss << '}';
         return oss.str();
     }
 
-    static Set<T, Compare> deserialize(const std::string& str) {
-        std::istringstream iss(str);
-        std::string token;
-        if (!(iss >> token) || token != "{") {
-            throw ParseException("Set deserialization error: expected '{' at start");
+    static Set deserialize(const std::string& data) {
+        std::istringstream iss(data);
+        iss.imbue(std::locale::classic());
+
+        iss >> std::ws;
+        if (iss.get() != '{') {
+            throw ParseException("Expected '{'");
         }
 
-        Set<T, Compare> resultSet;
-        while (iss >> token) {
-            if (token == "}") {
-                return resultSet;
-            }
-            std::stringstream ss(token);
-            T val;
-            if (!(ss >> val)) {
-                throw ParseException("Set deserialization error: invalid element token: " + token);
-            }
-            resultSet.insert(std::move(val));
-        }
+        Set result;
 
-        throw ParseException("Set deserialization error: expected '}' at end");
+        while (true) {
+            iss >> std::ws;
+            const int ch = iss.peek();
+
+            if (ch == std::char_traits<char>::eof()) {
+                throw ParseException("Expected '}'");
+            }
+            if (ch == '}') {
+                iss.get();
+                checkInputEnd(iss);
+                return result;
+            }
+
+            result.insert(readValue<T>(iss));
+        }
     }
 
     Set<T, Compare> operator+(const Set& other) const { return unionWith(other); }

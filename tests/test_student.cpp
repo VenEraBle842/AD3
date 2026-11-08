@@ -25,18 +25,15 @@ TEST(StudentTest, ComparisonOperators) {
 }
 
 TEST(StudentTest, StreamSerialization) {
-    Student original(205, "Elena", "Kozlova", 2001, 4.95);
+    Student original(205, "Elena", "Kozlova", 2001, 4.5);
 
     std::stringstream ss;
     ss << original;
-    EXPECT_EQ(ss.str(), "205:Elena:Kozlova:2001:4.95");
+    EXPECT_EQ(ss.str(), "205:\"Elena\":\"Kozlova\":2001:4.5");
 
     Student restored;
     ss >> restored;
+
+    ASSERT_FALSE(ss.fail());
     EXPECT_EQ(original, restored);
-    EXPECT_EQ(restored.id, 205);
-    EXPECT_EQ(restored.firstName, "Elena");
-    EXPECT_EQ(restored.lastName, "Kozlova");
-    EXPECT_EQ(restored.birthYear, 2001);
-    EXPECT_DOUBLE_EQ(restored.gpa, 4.95);
 }

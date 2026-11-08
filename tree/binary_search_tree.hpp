@@ -4,6 +4,7 @@
 #include "bst_exceptions.hpp"
 #include "traversal_types.hpp"
 #include "tree_printer.hpp"
+#include "serialization_utils.hpp"
 #include "../containers/dynamic_array.hpp"
 #include "../containers/stack.hpp"
 #include "../containers/queue.hpp"
@@ -14,6 +15,7 @@
 #include <iostream>
 #include <utility>
 #include <memory>
+#include <locale>
 
 template <typename T, typename Compare = std::less<T>>
 class BinarySearchTree {
@@ -347,70 +349,97 @@ public:
     // Итеративная сериализация (Pre-order с маркером #)
     std::string serialize() const {
         if (!root_) return "#";
+
         std::ostringstream oss;
+        oss.imbue(std::locale::classic());
+
         Stack<std::shared_ptr<TreeNode<T>>> st;
         st.push(root_);
 
         while (!st.empty()) {
-            auto curr = st.top();
+            auto node = st.top();
             st.pop();
 
-            if (!curr) {
+            if (!node) {
                 oss << "# ";
             } else {
-                oss << curr->value << " ";
-                st.push(curr->right);
-                st.push(curr->left);
+                writeValue(oss, node->value);
+                oss << ' ';
+
+                st.push(node->right);
+                st.push(node->left);
             }
         }
         return oss.str();
     }
 
-    static BinarySearchTree<T, Compare> deserialize(const std::string& data) {
+    static BinarySearchTree deserialize(const std::string& data) {
+        BinarySearchTree tree;
+
         std::istringstream iss(data);
-        std::string token;
-        if (!(iss >> token) || token == "#") {
-            return BinarySearchTree<T, Compare>();
-        }
-
-        std::stringstream ss(token);
-        T rootVal;
-        if (!(ss >> rootVal)) throw ParseException("Failed to parse token: " + token);
-
-        BinarySearchTree<T, Compare> tree;
-        tree.root_ = std::make_shared<TreeNode<T>>(std::move(rootVal));
-        tree.size_ = 1;
+        iss.imbue(std::locale::classic());
 
         struct NodeSlot {
             std::shared_ptr<TreeNode<T>> parent;
             bool isLeft;
+            std::shared_ptr<TreeNode<T>> lower;
+            std::shared_ptr<TreeNode<T>> upper;
         };
 
-        Stack<NodeSlot> st;
-        st.push({tree.root_, false}); // правый слот
-        st.push({tree.root_, true});  // левый слот
+        Stack<NodeSlot> slots;
 
-        while (iss >> token && !st.empty()) {
-            auto slot = st.top();
-            st.pop();
+        // Отсутствие родителя означает место корня дерева
+        slots.push({nullptr, false, nullptr, nullptr});
 
-            if (token != "#") {
-                std::stringstream nodeSS(token);
-                T val;
-                if (!(nodeSS >> val)) throw ParseException("Failed to parse token: " + token);
+        while (!slots.empty()) {
+            const NodeSlot slot = slots.top();
+            slots.pop();
 
-                auto newNode = std::make_shared<TreeNode<T>>(std::move(val));
-                if (slot.isLeft) {
-                    slot.parent->left = newNode;
-                } else {
-                    slot.parent->right = newNode;
-                }
-                ++tree.size_;
+            iss >> std::ws;
 
-                st.push({newNode, false});
-                st.push({newNode, true});
+            if (iss.peek() == std::char_traits<char>::eof()) {
+                throw ParseException("Incomplete tree");
             }
+
+            if (iss.peek() == '#') {
+                iss.get();
+                checkTokenEnd(iss);
+                continue;
+            }
+
+            T value = readValue<T>(iss);
+
+            if ((slot.lower &&
+                !tree.comp_(slot.lower->value, value)) ||
+                (slot.upper &&
+                !tree.comp_(value, slot.upper->value))) {
+                throw ParseException(
+                    "Invalid BST ordering or duplicate key"
+                );
+            }
+
+            auto node =
+                std::make_shared<TreeNode<T>>(std::move(value));
+
+            if (!slot.parent) {
+                tree.root_ = node;
+            } else if (slot.isLeft) {
+                slot.parent->left = node;
+            } else {
+                slot.parent->right = node;
+            }
+
+            ++tree.size_;
+
+            slots.push({
+                node, false, node, slot.upper
+            });
+            slots.push({
+                node, true, slot.lower, node
+            });
         }
+
+        checkInputEnd(iss);
         return tree;
     }
 
