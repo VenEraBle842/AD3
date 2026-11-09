@@ -81,7 +81,7 @@ struct Student {
             return is;
         }
 
-        const auto ch = is.eof() ? std::char_traits<char>::eof() : is.peek();
+        const int ch = is.eof() ? std::char_traits<char>::eof() : is.peek();
 
         if (ch != std::char_traits<char>::eof() && !std::isspace(static_cast<unsigned char>(ch))) {
             is.setstate(std::ios::failbit);

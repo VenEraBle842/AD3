@@ -88,8 +88,9 @@ public:
     }
 
     template <typename Func>
-    auto map(Func f) const -> Set<decltype(f(std::declval<T>()))> {
-        using MappedType = decltype(f(std::declval<T>()));
+    auto map(Func f) const -> Set<decltype(f(std::declval<const T&>()))> {
+        using MappedType = decltype(f(std::declval<const T&>()));
+
         Set<MappedType> resultSet;
         tree_.forEach(TraversalOrder::LKP, [&resultSet, &f](const T& val) {
             resultSet.insert(f(val));

@@ -321,8 +321,9 @@ public:
     }
 
     template <typename Func>
-    auto map(Func f) const -> BinarySearchTree<decltype(f(std::declval<T>()))> {
-        using MappedType = decltype(f(std::declval<T>()));
+    auto map(Func f) const -> BinarySearchTree<decltype(f(std::declval<const T&>()))> {
+        using MappedType = decltype(f(std::declval<const T&>()));
+
         BinarySearchTree<MappedType> newTree;
         forEach(TraversalOrder::KLP, [&newTree, &f](const T& val) {
             newTree.insert(f(val));
